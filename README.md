@@ -30,7 +30,11 @@ git clone https://github.com/JSantangelo83/MEVN-Challenge.git
 cd MEVN-Challenge/
 npm install
 ```
+### Run server's tests
+```bash
+npm run test
+```
 ### Run server
 ```bash
-npm start
+npm run dev
 ```
