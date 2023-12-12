@@ -1,7 +1,10 @@
 import express, { json, urlencoded } from "express"
 import morgan from "morgan"
 import cors from "cors"
-import connectDatabase from "./config/database"
+import connectDatabase from "./db/connection"
+// Importing Routes
+import authRoutes from "./routes/auth.routes"
+import userRoutes from "./routes/user.routes"
 
 const app = express()
 
@@ -17,13 +20,13 @@ app.use(json())
 // Database connection
 connectDatabase()
 
-// Routes 
-
 // Is alive route
 app.get("/ping", (req, res) => {
     res.send("pong")
 })
 
-// Users routes
+// Routes
+app.use("/auth", authRoutes)
+app.use("/users", userRoutes)
 
 export default app
