@@ -14,24 +14,32 @@ export const sequelize = new Sequelize({
 })
 
 export async function connectDatabase() {
-    try {
-        await sequelize.sync()
+    const maxRetries = 10;
+    const retryInterval = 5000; // 5 seconds
 
-        // Create an initial admin user if it doesn't exist
-        const [adminUser, created] = await User.findOrCreate({
-            where: { username: 'admin' },
-            defaults: {
-                username: 'admin',
-                password: '$2b$10$So7IZIhOQPvh5yiyglKe2.gBXD2w5G8nYVuzbtVHRbslCqm5O6mCi',
-                isAdmin: true
-            } as User
-        });
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            await sequelize.sync()
 
-        console.log('Database connected successfully')
-    } catch (error) {
-        //TODO: test this line with jest
-        console.log(error)
+            // Create an initial admin user if it doesn't exist
+            const [adminUser, created] = await User.findOrCreate({
+                where: { username: 'admin' },
+                defaults: {
+                    username: 'admin',
+                    password: '$2b$10$So7IZIhOQPvh5yiyglKe2.gBXD2w5G8nYVuzbtVHRbslCqm5O6mCi',
+                    isAdmin: true
+                } as User
+            });
+
+            console.log('Database connected successfully')
+            return;
+        } catch (error) {
+            console.log(`Attempt ${i + 1} failed. Retrying in ${retryInterval / 1000} seconds...`);
+            await new Promise(resolve => setTimeout(resolve, retryInterval));
+        }
     }
+
+    console.log('Failed to connect to the database after ' + maxRetries + ' attempts.');
 }
 
 export default connectDatabase;
