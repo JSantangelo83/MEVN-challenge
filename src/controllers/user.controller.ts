@@ -3,9 +3,13 @@ import bcrypt from 'bcrypt';
 import { User } from '../models/user.model';
 
 export const listUsers = async (req: Request, res: Response) => {
-    const users = await User.findAll().catch((error) => {
+    // Find all users and remove the password field
+    const users = await User.findAll({
+        attributes: { exclude: ['password'] }
+    }).catch((error) => {
         res.status(500).json({ error: error.message });
     });
+
     res.json(users);
 }
 
@@ -49,7 +53,6 @@ export const updateUser = async (req: Request, res: Response) => {
     const id = req.params.id;
     const { username, password, isAdmin } = req.body;
 
-    // Check if user exists
     const user = await User.findByPk(id);
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -68,5 +71,10 @@ export const updateUser = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     });
 
-    res.json({ msg: 'User updated successfully', user: user });
+    // Fetch the updated user without the password
+    const updatedUser = await User.findByPk(id, {
+        attributes: { exclude: ['password'] }
+    });
+
+    res.json({ msg: 'User updated successfully', user: updatedUser });
 }

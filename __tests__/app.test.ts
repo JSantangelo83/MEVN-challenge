@@ -1,14 +1,15 @@
-import request from "supertest";
-import { connectDatabase } from "../src/db/connection";
-import app from "../src/app";
+import request from 'supertest';
+import app from '../src/app';
 
-describe("Testing app.ts", () => {
-  beforeAll(async () => {
-    await connectDatabase();
+describe('Express app', () => {
+  it('should respond with a 404 for non-existent routes', async () => {
+    const res = await request(app).get('/non-existent-route');
+    expect(res.status).toBe(404);
   });
 
-  test("The server is alive", async () => {
-    const res = await request(app).get("/ping");
-    expect(res.text).toEqual("pong");
+  it('should respond with a 200 for the /ping route', async () => {
+    const res = await request(app).get('/ping');
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('pong');
   });
 });

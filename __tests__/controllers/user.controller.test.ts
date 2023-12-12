@@ -19,15 +19,16 @@ describe('listUsers', () => {
         res = { status, json };
     });
 
-    it('returns all users', async () => {
+    it('returns all users without password', async () => {
         const mockUsers = [
-            { username: 'test1', password: 'password1', isAdmin: false },
-            { username: 'test2', password: 'password2', isAdmin: true },
+            { id: '1', username: 'test', password: 'password', isAdmin: false },
+            { id: '2', username: 'test2', password: 'password2', isAdmin: true }
         ];
         (User.findAll as jest.Mock).mockResolvedValue(mockUsers);
 
         await listUsers(req as Request, res as Response);
 
+        expect(User.findAll).toHaveBeenCalledWith({ attributes: { exclude: ['password'] } });
         expect(json).toHaveBeenCalledWith(mockUsers);
     });
 
@@ -155,7 +156,7 @@ describe('updateUser', () => {
       expect(json).toHaveBeenCalledWith({ error: 'User not found' });
     });
   
-    it('updates the user if found', async () => {
+    it('updates the user without password field if found', async () => {
       const mockUser = { username: 'test', password: 'password', isAdmin: false };
       (User.findByPk as jest.Mock).mockResolvedValue(mockUser);
       (bcrypt.genSalt as jest.Mock).mockResolvedValue('salt');
@@ -168,7 +169,8 @@ describe('updateUser', () => {
         username: 'test',
         password: 'hashedPassword',
         isAdmin: false
-      }, { where: { id: '1' } });
+      }, { where: { id: '1' } }); 
+      expect(User.findByPk).toHaveBeenCalledWith('1', { attributes: { exclude: ['password'] } });
       expect(json).toHaveBeenCalledWith({ msg: 'User updated successfully', user: mockUser });
     });
 
