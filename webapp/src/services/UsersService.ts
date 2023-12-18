@@ -39,7 +39,7 @@ export interface User {
     updatedAt: string;
 }
 
-interface UserPassword extends User {
+export interface UserPassword extends User {
     password: string;
 }
 

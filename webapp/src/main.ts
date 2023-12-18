@@ -1,13 +1,21 @@
 import { createApp } from 'vue'
-import { ForbiddenError, UnauthorizedError } from './utils/Errors'
+import { DefaultError, ForbiddenError, UnauthorizedError } from './utils/Errors'
 import { createRouter, createWebHistory } from 'vue-router'
 import './style.css'
 import App from './App.vue'
 import LoginForm from './views/LoginForm.vue'
 import UsersList from './views/UsersList.vue'
 
-const app = createApp(App)
+//Font Awesome
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faCheck, faPenToSquare, faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { swalError } from './helpers/SwalHelper'
+import { BaseResponseError } from './services/BaseService'
 
+library.add(faCheck, faXmark, faTrash, faPenToSquare, faPlus)
+
+const app = createApp(App)
 const router = createRouter({
     history: createWebHistory(),
     routes: [
@@ -30,7 +38,19 @@ const router = createRouter({
 })
 
 // Global error handler
-app.config.errorHandler = (err) => {
+window.onerror = (err: unknown) => {
+    handleErrors(err);
+};
+
+// Global unhandled promise rejection handler
+window.onunhandledrejection = (event: PromiseRejectionEvent) => {
+    handleErrors(event.reason);
+};
+
+function handleErrors(err: unknown) {
+    if (err instanceof DefaultError) {
+        swalError(err.title, err.error);
+    }
     // Handling Authentication Errors
     if (err instanceof UnauthorizedError || err instanceof ForbiddenError) {
         localStorage.removeItem('token');
@@ -39,7 +59,7 @@ app.config.errorHandler = (err) => {
 
     // Handling other errors
     console.error(err);
-};
+}
 
 router.beforeEach((to, from, next) => {
     if (to.meta.requiresAuth) {
@@ -58,4 +78,5 @@ router.beforeEach((to, from, next) => {
 });
 
 app.use(router)
-app.mount('#app')
+    .component('font-awesome-icon', FontAwesomeIcon)
+    .mount('#app')

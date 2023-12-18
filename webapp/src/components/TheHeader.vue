@@ -1,31 +1,21 @@
 <template>
   <header class="header">
-    <h1>Welcome, {{ currentUser.username }}!</h1>
-    <button @click="logout">Logout</button>
+    <h2 class="header__msg">Welcome back, {{ currentUser.username }}!</h2>
+    <button class="header__logoutBtn" @click="logout">Logout</button>
   </header>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { UnauthorizedError } from "../utils/Errors";
+import { PropType, defineComponent } from "vue";
 import { CurrentUser } from "../services/LoginService";
-
-interface ComponentData {
-  currentUser: CurrentUser;
-}
 
 export default defineComponent({
   name: "TheHeader",
-  data(): ComponentData {
-    return {
-      currentUser: {} as CurrentUser,
-    };
-  },
-  created() {
-    this.currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
-    if (!this.currentUser) {
-      throw new UnauthorizedError("You must be logged in to view this page.");
-    }
+  props: {
+    currentUser: {
+      type: Object as PropType<CurrentUser>,
+      required: true,
+    },
   },
   methods: {
     logout() {
@@ -38,4 +28,11 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2em;
+  background-color: #e6e3e3;
+}
 </style>

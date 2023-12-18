@@ -1,5 +1,6 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosPromise, AxiosResponse } from "axios";
 import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError, UnauthorizedError } from "../utils/Errors";
+import { swalSuccess } from "../helpers/SwalHelper";
 
 export default class BaseService {
     apiUrl: string;
@@ -14,30 +15,42 @@ export default class BaseService {
 
     async get<T>(method: string) {
         this.handleAuth();
-        const response = await axios.get<BaseResponse<T>>(`${this.apiUrl}${this.route}${method}`)
+        const response = await this.getResponse<BaseResponse<T>>(axios.get(`${this.apiUrl}${this.route}${method}`));
         return this.handleResponse<T>(response);
     }
 
     async post<T>(method: string, data: unknown) {
         this.handleAuth();
-        const response = await axios.post<BaseResponse<T>>(`${this.apiUrl}${this.route}${method}`, data);
+        const response = await this.getResponse<BaseResponse<T>>(axios.post(`${this.apiUrl}${this.route}${method}`, data));
         return this.handleResponse<T>(response);
     }
 
     async put<T>(method: string, data: unknown) {
         this.handleAuth();
-        const response = await axios.put<BaseResponse<T>>(`${this.apiUrl}${this.route}${method}`, data);
+        const response = await this.getResponse<BaseResponse<T>>(axios.put(`${this.apiUrl}${this.route}${method}`, data));
         return this.handleResponse<T>(response);
     }
 
     async delete<T>(method: string) {
         this.handleAuth();
-        const response = await axios.delete<BaseResponse<T>>(`${this.apiUrl}${this.route}${method}`);
+        const response = await this.getResponse<BaseResponse<T>>(axios.delete(`${this.apiUrl}${this.route}${method}`));
         return this.handleResponse<T>(response);
+    }
+
+    async getResponse<T>(method: AxiosPromise<T>): Promise<AxiosResponse<T>> {
+        //Get the response from the server (in any case, even if it's an error)   
+        try {
+            const response = await method;
+            return response;
+        } catch (error) {
+            const axiosError = error as AxiosError;
+            return axiosError.response as AxiosResponse<T>;
+        }
     }
 
     handleAuth() {
         if (this.useAuth) {
+            this.token = localStorage.getItem("token");
             if (!this.token) {
                 delete axios.defaults.headers.common['Authorization'];
                 throw new UnauthorizedError("This endpoint requires authentication");
@@ -52,8 +65,9 @@ export default class BaseService {
             if (response.status === 400) {
                 throw new BadRequestError((response.data as BaseResponseError).error);
             }
-
+            
             if (response.status === 401) {
+                console.log(response.status)
                 throw new UnauthorizedError((response.data as BaseResponseError).error);
             }
 
@@ -72,6 +86,10 @@ export default class BaseService {
             throw new Error(response.data.error);
         }
 
+        if (response.data.message) {
+            swalSuccess(response.data.message);
+        }
+
         return response.data as BaseResponseSuccess<T>;
     }
 }
@@ -85,7 +103,7 @@ interface BaseResponseSuccess<T> {
     // if T is null, data is undefined, otherwise it's T
     data: T extends null ? undefined : T;
 }
-interface BaseResponseError {
+export interface BaseResponseError {
     error: string;
     message?: never;
     data?: never;
