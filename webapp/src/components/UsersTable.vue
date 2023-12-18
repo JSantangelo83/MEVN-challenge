@@ -8,7 +8,7 @@
     </div>
     <div class="usersTable__item" v-for="user in users">
       <span class="usersTable__item__text">{{ user.username }}</span>
-      <span class="usersTable__item__text">{{ new Date(user.createdAt).toLocaleDateString() }}</span> 
+      <span class="usersTable__item__text">{{ new Date(user.createdAt).toLocaleDateString() }}</span>
       <span
         class="usersTable__item__icon"
         :class="{

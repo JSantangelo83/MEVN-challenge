@@ -22,6 +22,9 @@ const router = createRouter({
         {
             path: '/login',
             component: LoginForm,
+            meta: {
+                hideForAuth: true,
+            }
         },
         {
             path: '/users',
@@ -30,10 +33,8 @@ const router = createRouter({
                 requiresAuth: true
             }
         },
-        {
-            path: '/',
-            redirect: '/users'
-        }
+        // fallback
+        { path: '/:pathMatch(.*)*', redirect: '/login' }
     ]
 })
 
@@ -51,7 +52,7 @@ function handleErrors(err: unknown) {
     if (err instanceof DefaultError) {
         swalError(err.title, err.error);
     }
-    // Handling Authentication Errors
+    // Handling Authotication Errors
     if (err instanceof UnauthorizedError || err instanceof ForbiddenError) {
         localStorage.removeItem('token');
         router.push('/login');
@@ -62,17 +63,14 @@ function handleErrors(err: unknown) {
 }
 
 router.beforeEach((to, from, next) => {
-    if (to.meta.requiresAuth) {
-        const token = localStorage.getItem('token');
-        if (token) {
-            // User is authenticated, proceed to the route
-            next();
-        } else {
-            // User is not authenticated, redirect to login
-            next('/login');
-        }
+    const token = localStorage.getItem('token');
+    const { requiresAuth, hideForAuth } = to.meta || {};
+
+    if (requiresAuth) {
+        token ? next() : next('/login');
+    } else if (hideForAuth) {
+        token ? next('/users') : next();
     } else {
-        // Non-protected route, allow access
         next();
     }
 });
