@@ -22,6 +22,10 @@ export const deleteUser = async (req: Request, res: Response) => {
         return res.status(404).json({ error: 'User not found' });
     }
 
+    if (user.id == res.locals.user.id) {
+        return res.status(400).json({ error: 'You cannot delete yourself' });
+    }
+
     // Delete user
     await User.destroy({ where: { id: id } }).catch((error) => {
         res.status(500).json({ error: error.message });
@@ -58,16 +62,19 @@ export const updateUser = async (req: Request, res: Response) => {
         return res.status(404).json({ error: 'User not found' });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Locate updated properties
+    const updatedProperties: any = {};
+    if (username && username !== user.username) updatedProperties.username = username;
+    if (isAdmin !== undefined && isAdmin !== user.isAdmin) updatedProperties.isAdmin = isAdmin;
+    if (password) {
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        updatedProperties.password = hashedPassword;
+    }
 
     // Update user
-    await User.update({
-        username: username,
-        password: hashedPassword,
-        isAdmin: isAdmin
-    } as User, { where: { id: id } }).catch((error) => {
+    await User.update(updatedProperties as User, { where: { id: id } }).catch((error) => {
         res.status(500).json({ error: error.message });
     });
 

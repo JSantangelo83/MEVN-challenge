@@ -35,7 +35,6 @@ export const login = async (req: Request, res: Response) => {
     const token = jwt.sign(signedData, process.env.SECRET_KEY || '<FALLBACK_SECRET_KEY>');
 
     res.json({
-        message: 'Successfully logged in',
         data: {
             token: token,
             currentUser: signedData
