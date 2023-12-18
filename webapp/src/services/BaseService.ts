@@ -1,40 +1,39 @@
 import axios, { AxiosResponse } from "axios";
 import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError, UnauthorizedError } from "../utils/Errors";
 
-export default class BaseService<T> {
+export default class BaseService {
     apiUrl: string;
     useAuth: boolean;
     token: string | null = localStorage.getItem("token");
     route: string;
     constructor(useAuth: boolean, route: string) {
-        // this.apiUrl = process.env.API_URL || "";
         this.apiUrl = "http://localhost:3000";
         this.useAuth = useAuth;
         this.route = route;
     }
 
-    async get(method: string) {
+    async get<T>(method: string) {
         this.handleAuth();
         const response = await axios.get<BaseResponse<T>>(`${this.apiUrl}${this.route}${method}`)
-        return this.handleResponse(response);
+        return this.handleResponse<T>(response);
     }
 
-    async post(method: string, data: unknown) {
+    async post<T>(method: string, data: unknown) {
         this.handleAuth();
         const response = await axios.post<BaseResponse<T>>(`${this.apiUrl}${this.route}${method}`, data);
-        return this.handleResponse(response);
+        return this.handleResponse<T>(response);
     }
 
-    async put(method: string, data: unknown) {
+    async put<T>(method: string, data: unknown) {
         this.handleAuth();
         const response = await axios.put<BaseResponse<T>>(`${this.apiUrl}${this.route}${method}`, data);
-        return this.handleResponse(response);
+        return this.handleResponse<T>(response);
     }
 
-    async delete(method: string) {
+    async delete<T>(method: string) {
         this.handleAuth();
         const response = await axios.delete<BaseResponse<T>>(`${this.apiUrl}${this.route}${method}`);
-        return this.handleResponse(response);
+        return this.handleResponse<T>(response);
     }
 
     handleAuth() {
@@ -48,7 +47,7 @@ export default class BaseService<T> {
         }
     }
 
-    handleResponse(response: AxiosResponse<BaseResponse<T>>): BaseResponseData<T> {
+    handleResponse<T>(response: AxiosResponse<BaseResponse<T>>): BaseResponseSuccess<T> {
         if (response.status !== 200) {
             if (response.status === 400) {
                 throw new BadRequestError((response.data as BaseResponseError).error);
@@ -73,22 +72,21 @@ export default class BaseService<T> {
             throw new Error(response.data.error);
         }
 
-        return response.data as BaseResponseData<T>;
+        return response.data as BaseResponseSuccess<T>;
     }
 }
 
-type BaseResponse<T> = BaseResponseData<T> | BaseResponseError;
+type BaseResponse<T> = BaseResponseSuccess<T> | BaseResponseError;
 
-interface BaseResponseData<T> extends BaseResponseMessage {
-    data: T;
-}
-
-interface BaseResponseMessage {
+interface BaseResponseSuccess<T> {
     error?: never;
-    message: string;
+    // if T is null, message is string, otherwise it's undefined
+    message: T extends null ? string : undefined;
+    // if T is null, data is undefined, otherwise it's T
+    data: T extends null ? undefined : T;
 }
-
 interface BaseResponseError {
     error: string;
     message?: never;
+    data?: never;
 }

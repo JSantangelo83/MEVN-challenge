@@ -10,7 +10,7 @@ export const listUsers = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     });
 
-    res.json(users);
+    res.json({ data: users });
 }
 
 export const deleteUser = async (req: Request, res: Response) => {
@@ -46,7 +46,7 @@ export const createUser = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message });
     });
 
-    res.json({ message: 'User created successfully', data: { user: user } });
+    res.json({ message: 'User created successfully', data: user });
 }
 
 export const updateUser = async (req: Request, res: Response) => {
@@ -76,5 +76,5 @@ export const updateUser = async (req: Request, res: Response) => {
         attributes: { exclude: ['password'] }
     });
 
-    res.json({ message: 'User updated successfully', data: { user: updatedUser } });
+    res.json({ message: 'User updated successfully', data: updatedUser });
 }

@@ -14,7 +14,7 @@ export const login = async (req: Request, res: Response) => {
     // If user doesn't exist
     if (!user) {
         return res.status(401).json({
-            message: 'Invalid Credentials'
+            error: 'Invalid Credentials'
         })
     }
 
@@ -22,17 +22,25 @@ export const login = async (req: Request, res: Response) => {
     const passwordValid = await bcrypt.compare(password, user.password)
     if (!passwordValid) {
         return res.status(401).json({
-            message: 'Invalid Credentials'
+            error: 'Invalid Credentials'
         })
     }
 
-    // Generate JWT
-    const token = jwt.sign({
+    let signedData = {
         username: username,
         isAdmin: user.isAdmin
-    }, process.env.SECRET_KEY || '<FALLBACK_SECRET_KEY>');
+    }
 
-    res.json({ message: 'Successfully logged in', data: { token: token } });
+    // Generate JWT
+    const token = jwt.sign(signedData, process.env.SECRET_KEY || '<FALLBACK_SECRET_KEY>');
+
+    res.json({
+        message: 'Successfully logged in',
+        data: {
+            token: token,
+            currentUser: signedData
+        }
+    });
 }
 
 export const isLogged = (req: Request, res: Response, next: NextFunction) => {
@@ -48,12 +56,12 @@ export const isLogged = (req: Request, res: Response, next: NextFunction) => {
             next()
         } catch (error) {
             res.status(401).json({
-                message: 'Invalid Token'
+                error: 'Invalid Token'
             })
         }
     } else {
         res.status(401).json({
-            message: 'Invalid Token'
+            error: 'Invalid Token'
         })
     }
 }
@@ -65,7 +73,7 @@ export const isAdmin = async (req: Request, res: Response, next: NextFunction) =
         next()
     } else {
         res.status(403).json({
-            message: 'You must be an admin to perform this action'
+            error: 'You must be an admin to perform this action'
         })
     }
 }

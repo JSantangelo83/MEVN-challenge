@@ -1,40 +1,42 @@
 import BaseService from "./BaseService";
 
-export default class UsersService extends BaseService<User> {
+export default class UsersService extends BaseService {
     constructor() {
         // UsersService requires authentication to access its endpoints
-        super(true,'/users');
+        super(true, '/users');
     }
-    public async getAllUsers() {
-        const response = await this.get('/');
+    public async getAllUsers(): Promise<User[]> {
+        const response = await this.get<User[]>('/');
         return response.data;
     }
 
-    public async createUser(data: UserPassword) {
-        const response = await this.post('/', data);
+    public async createUser(data: UserPassword): Promise<User> {
+        const response = await this.post<User>('/', data);
         return response.data;
     }
 
-    public async updateUser(data: UserPassword) {
-        const response = await this.put(`/${data.id}`, data);
+    public async updateUser(data: UserPassword): Promise<User> {
+        const response = await this.put<User>(`/${data.id}`, data);
         return response.data;
     }
 
-    public async getUser(data: FindUserRequest) {
-        const response = await this.get(`/${data.id}`);
+    public async getUser(data: FindUserRequest): Promise<User> {
+        const response = await this.get<User>(`/${data.id}`);
         return response.data;
     }
 
-    public async deleteUser(data: FindUserRequest) {
-        const response = await this.delete(`/${data.id}`);
-        return response.data;
+    public async deleteUser(data: FindUserRequest): Promise<string> {
+        const response = await this.delete<null>(`/${data.id}`);
+        return response.message;
     }
 }
 
-interface User {
+export interface User {
     id: number;
     username: string;
     isAdmin: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 interface UserPassword extends User {

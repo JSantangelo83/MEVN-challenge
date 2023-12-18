@@ -1,11 +1,12 @@
 import BaseService from "./BaseService";
 
-export default class LoginService extends BaseService<LoginResponse> {
+export default class LoginService extends BaseService {
     constructor() {
+        // LoginService does not require authentication to access its endpoints
         super(false, '/auth')
     }
-    public async login(data: LoginRequest) {
-        const response = await this.post('/login', data);
+    public async login(data: LoginRequest): Promise<LoginResponse> {
+        const response = await this.post<LoginResponse>('/login', data);
         return response.data;
     }
 }
@@ -15,6 +16,11 @@ interface LoginRequest {
     password: string;
 }
 
+export interface CurrentUser {
+    username: string;
+    isAdmin: boolean;
+}
 interface LoginResponse {
     token: string;
+    currentUser: CurrentUser
 }

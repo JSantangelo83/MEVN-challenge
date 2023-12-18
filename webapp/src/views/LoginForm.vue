@@ -29,6 +29,7 @@ export default defineComponent({
 
       if (data) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("currentUser", JSON.stringify(data.currentUser));
         this.$router.push("/users");
       }
     },
