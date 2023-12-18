@@ -11,7 +11,6 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faCheck, faPenToSquare, faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { swalError } from './helpers/SwalHelper'
-import { BaseResponseError } from './services/BaseService'
 
 library.add(faCheck, faXmark, faTrash, faPenToSquare, faPlus)
 
@@ -62,7 +61,7 @@ function handleErrors(err: unknown) {
     console.error(err);
 }
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _, next) => {
     const token = localStorage.getItem('token');
     const { requiresAuth, hideForAuth } = to.meta || {};
 

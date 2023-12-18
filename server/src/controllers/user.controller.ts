@@ -16,14 +16,15 @@ export const listUsers = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
     const id = req.params.id;
 
+    // Check if user is deleting himself
+    if (id == res.locals.user.id) {
+        return res.status(400).json({ error: 'You cannot delete yourself' });
+    }
+
     // Check if user exists
     const user = await User.findByPk(id);
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
-    }
-
-    if (user.id == res.locals.user.id) {
-        return res.status(400).json({ error: 'You cannot delete yourself' });
     }
 
     // Delete user
@@ -40,6 +41,12 @@ export const createUser = async (req: Request, res: Response) => {
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Validate username    
+    const existingUser = await User.findOne({ where: { username: username } });
+    if (existingUser) {
+        return res.status(400).json({ error: 'Username is already taken' });
+    }
 
     // Create user
     const user = await User.create({
@@ -64,7 +71,14 @@ export const updateUser = async (req: Request, res: Response) => {
 
     // Locate updated properties
     const updatedProperties: any = {};
-    if (username && username !== user.username) updatedProperties.username = username;
+    if (username && username !== user.username) {
+        updatedProperties.username = username;
+        // Validate username    
+        const existingUser = await User.findOne({ where: { username: username } });
+        if (existingUser && existingUser.id != Number(id)) {
+            return res.status(400).json({ error: 'That username is already taken' });
+        }
+    }
     if (isAdmin !== undefined && isAdmin !== user.isAdmin) updatedProperties.isAdmin = isAdmin;
     if (password) {
         // Hash password

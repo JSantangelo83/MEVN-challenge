@@ -17,6 +17,7 @@ interface LoginRequest {
 }
 
 export interface CurrentUser {
+    id: number;
     username: string;
     isAdmin: boolean;
 }

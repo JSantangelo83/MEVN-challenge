@@ -18,7 +18,7 @@ import TheHeader from "../components/TheHeader.vue";
 import { CurrentUser } from "../services/LoginService";
 import { UnauthorizedError } from "../utils/Errors";
 import UsersTable from "../components/UsersTable.vue";
-import { swalConfirm, swalUserForm } from "../helpers/SwalHelper";
+import { swalConfirm, swalError, swalUserForm } from "../helpers/SwalHelper";
 
 const usersService = new UsersService();
 
@@ -47,12 +47,23 @@ export default defineComponent({
       this.users = await usersService.getAllUsers();
     },
     async deleteUser(user: User) {
+      if (user.id == this.currentUser.id){
+        swalError("Invalid action", "You cannot delete yourself.");
+      }
+
       if (await swalConfirm("This action will permanently delete the user")) {
         await usersService.deleteUser(user);
         this.updateUsersList();
       }
     },
     async editUser(user: User) {
+      // Warning if editing yourself
+      if (user.id == this.currentUser.id){
+        if(!await swalConfirm("You're trying to edit yourself, this could cause you to lose privileges.")){
+          return
+        };
+      }
+      
       let newUser = await swalUserForm(user);
       if (!newUser) return;
       await usersService.updateUser(newUser);

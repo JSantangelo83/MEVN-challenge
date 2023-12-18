@@ -27,6 +27,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     let signedData = {
+        id: user.id,
         username: username,
         isAdmin: user.isAdmin
     }
@@ -67,7 +68,7 @@ export const isLogged = (req: Request, res: Response, next: NextFunction) => {
 
 export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
     // Check if user is admin using decoded token from res.locals object
-    const user: any = await User.findOne({ where: { username: res.locals.user.username } });
+    const user: any = await User.findOne({ where: { id: res.locals.user.id} });
     if (user?.isAdmin) {
         next()
     } else {

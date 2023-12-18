@@ -4,7 +4,7 @@
       <span class="usersTable__header__title">Username</span>
       <span class="usersTable__header__title">Created At</span>
       <span class="usersTable__header__title">Is Admin</span>
-      <span class="usersTable__header__title__actions">Actions</span>
+      <span v-if="currentUser.isAdmin" class="usersTable__header__title__actions">Actions</span>
     </div>
     <div class="usersTable__item" v-for="user in users">
       <span class="usersTable__item__text">{{ user.username }}</span>
@@ -18,7 +18,7 @@
       >
         <font-awesome-icon :icon="user.isAdmin ? 'check' : 'xmark'" />
       </span>
-      <div class="usersTable__item__actions">
+      <div v-if="currentUser.isAdmin" class="usersTable__item__actions">
         <span 
         @click="onEditUser(user)"
         class="usersTable__item__btn usersTable__item__btn--blue"
