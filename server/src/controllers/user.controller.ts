@@ -18,13 +18,14 @@ export const deleteUser = errorWrapper(async (req: Request<FindUserData>, res: R
 
     // Check if user is deleting himself
     if (id == res.locals?.user.id) {
-        next(DeletingYourselfError)
+        return next(DeletingYourselfError)
     }
 
     // Check if user exists
     const user = await User.findByPk(id);
     if (!user) {
-        next(UserNotFoundError);
+        return next(UserNotFoundError);
+
     }
 
     // Delete user
@@ -43,7 +44,7 @@ export const createUser = errorWrapper(async (req: Request<unknown, unknown, Use
     // Validate username    
     const existingUser = await User.findOne({ where: { username: username } });
     if (existingUser) {
-        next(UsernameTakenError);
+        return  next(UsernameTakenError);
     }
 
     // Create user
@@ -62,7 +63,7 @@ export const updateUser = errorWrapper(async (req: Request<FindUserData, unknown
 
     const user = await User.findByPk(id);
     if (!user) {
-        next(UserNotFoundError)
+        return next(UserNotFoundError)
     }
 
     // Locate updated properties
@@ -72,7 +73,7 @@ export const updateUser = errorWrapper(async (req: Request<FindUserData, unknown
         // Validate username    
         const existingUser = await User.findOne({ where: { username: username } });
         if (existingUser && existingUser.id != Number(id)) {
-            next(UsernameTakenError);
+            return  next(UsernameTakenError);
         }
     }
     if (isAdmin !== undefined && isAdmin !== user?.isAdmin) updatedProperties.isAdmin = isAdmin;

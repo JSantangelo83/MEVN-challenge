@@ -17,13 +17,13 @@ export const login = errorWrapper(async (req: Request<unknown, unknown, LoginDat
 
     // If user doesn't exist
     if (!user) {
-        next(InvalidCredentialsError)
+        return next(InvalidCredentialsError)
     }
 
     // If user exists, compare passwords
     const passwordValid = await bcrypt.compare(password, user.password)
     if (!passwordValid) {
-        next(InvalidCredentialsError)
+        return next(InvalidCredentialsError)
     }
 
     let signedData = {
@@ -53,10 +53,10 @@ export const isLogged = errorWrapper(async (req: Request, res: Response, next: N
             res.locals.user = decoded;
             next()
         } catch (error) {
-            next(InvalidTokenError)
+            return next(InvalidTokenError)
         }
     } else {
-        next(InvalidTokenError)
+        return next(InvalidTokenError)
     }
 })
 
@@ -66,6 +66,6 @@ export const isAdmin = errorWrapper(async (req: Request, res: Response, next: Ne
     if (user?.isAdmin) {
         next()
     } else {
-        next(NotAdminError)
+        return next(NotAdminError)
     }
 })
