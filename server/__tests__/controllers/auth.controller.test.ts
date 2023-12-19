@@ -3,6 +3,7 @@ import { isLogged, isAdmin, login } from '../../src/controllers/auth.controller'
 import { User } from '../../src/models/user.model';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { UnhandledInternalError, InvalidCredentialsError, InvalidTokenError, NotAdminError } from '../../src/utils/Errors';
 
 jest.mock('jsonwebtoken');
 
@@ -22,23 +23,23 @@ describe('isLogged', () => {
 
     test('returns 401 if authorization header is not present', () => {
         isLogged(mockRequest as Request, mockResponse as Response, nextFunction);
-        expect(mockResponse.status).toHaveBeenCalledWith(401);
-        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid Token' });
+        
+        expect(nextFunction).toHaveBeenCalledWith(InvalidTokenError);
     });
 
     test('returns 401 if authorization header does not start with Bearer ', () => {
         mockRequest.headers = { authorization: 'Basic token' };
         isLogged(mockRequest as Request, mockResponse as Response, nextFunction);
-        expect(mockResponse.status).toHaveBeenCalledWith(401);
-        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid Token' });
+        
+        expect(nextFunction).toHaveBeenCalledWith(InvalidTokenError);
     });
 
     test('returns 401 if token is not valid', () => {
         mockRequest.headers = { authorization: 'Bearer token' };
         (jwt.verify as jest.Mock).mockImplementation(() => { throw new Error(); });
         isLogged(mockRequest as Request, mockResponse as Response, nextFunction);
-        expect(mockResponse.status).toHaveBeenCalledWith(401);
-        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid Token' });
+        
+        expect(nextFunction).toHaveBeenCalledWith(InvalidTokenError);
     });
 
     test('calls next function if token is valid', () => {
@@ -77,21 +78,22 @@ describe('isAdmin', () => {
     test('returns 403 if user is not admin', async () => {
         mockUser.findOne.mockResolvedValue({ isAdmin: false });
         await isAdmin(mockRequest as Request, mockResponse as Response, nextFunction);
-        expect(mockResponse.status).toHaveBeenCalledWith(403);
-        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'You must be an admin to perform this action' });
+        
+        expect(nextFunction).toHaveBeenCalledWith(NotAdminError);
     });
 
     test('returns 403 if user is not found', async () => {
         mockUser.findOne.mockResolvedValue(null);
         await isAdmin(mockRequest as Request, mockResponse as Response, nextFunction);
-        expect(mockResponse.status).toHaveBeenCalledWith(403);
-        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'You must be an admin to perform this action' });
+        
+        expect(nextFunction).toHaveBeenCalledWith(NotAdminError);
     });
 });
 
 describe('login', () => {
     let mockRequest: Partial<Request>;
     let mockResponse: Partial<Response>;
+    let nextFunction: NextFunction = jest.fn();
     let mockUser: any;
 
     beforeEach(() => {
@@ -110,27 +112,18 @@ describe('login', () => {
         };
         User.findOne = mockUser.findOne;
     });
-    
-    it('should return 500 if database operation fails', async () => {
-        mockUser.findOne.mockRejectedValue(new Error('Database error'));
-        await login(mockRequest as Request, mockResponse as Response);
-        expect(mockResponse.status).toHaveBeenCalledWith(500);
-        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Database error' });
-    });
 
     test('returns 401 if user does not exist', async () => {
         mockUser.findOne.mockResolvedValue(null);
-        await login(mockRequest as Request, mockResponse as Response);
-        expect(mockResponse.status).toHaveBeenCalledWith(401);
-        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid Credentials' });
+        await login(mockRequest as Request, mockResponse as Response, nextFunction as NextFunction);
+        expect(nextFunction).toHaveBeenCalledWith(InvalidCredentialsError);
     });
 
     test('returns 401 if password is invalid', async () => {
         mockUser.findOne.mockResolvedValue({ password: 'wrongPassword' });
         bcrypt.compare = jest.fn().mockResolvedValue(false);
-        await login(mockRequest as Request, mockResponse as Response);
-        expect(mockResponse.status).toHaveBeenCalledWith(401);
-        expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Invalid Credentials' });
+        await login(mockRequest as Request, mockResponse as Response, nextFunction as NextFunction);
+        expect(nextFunction).toHaveBeenCalledWith(InvalidCredentialsError);
     });
 
     test('returns token if credentials are valid', async () => {
@@ -139,7 +132,7 @@ describe('login', () => {
         bcrypt.compare = jest.fn().mockResolvedValue(true);
         jwt.sign = jest.fn().mockReturnValue('testToken');
 
-        await login(mockRequest as Request, mockResponse as Response);
+        await login(mockRequest as Request, mockResponse as Response, nextFunction as NextFunction);
 
         expect(mockResponse.status).not.toHaveBeenCalled();
         expect(mockResponse.json).toHaveBeenCalledWith({

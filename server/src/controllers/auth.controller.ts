@@ -2,28 +2,24 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import { User } from '../models/user.model';
 import jwt from 'jsonwebtoken';
+import { InvalidCredentialsError, InvalidTokenError, NotAdminError } from '../utils/Errors';
+import { errorWrapper } from './error.controller';
 
-export const login = async (req: Request, res: Response) => {
+export const login = errorWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const { username, password } = req.body;
 
     // Search user in database
-    const user: any = await User
-        .findOne({ where: { username: username } })
-        .catch((err: Error) => { res.status(500).json({ error: 'Database error' }) });
+    const user: any = await User.findOne({ where: { username: username } })
 
     // If user doesn't exist
     if (!user) {
-        return res.status(401).json({
-            error: 'Invalid Credentials'
-        })
+        next(InvalidCredentialsError)
     }
 
     // If user exists, compare passwords
     const passwordValid = await bcrypt.compare(password, user.password)
     if (!passwordValid) {
-        return res.status(401).json({
-            error: 'Invalid Credentials'
-        })
+        next(InvalidCredentialsError)
     }
 
     let signedData = {
@@ -41,39 +37,31 @@ export const login = async (req: Request, res: Response) => {
             currentUser: signedData
         }
     });
-}
+})
 
-export const isLogged = (req: Request, res: Response, next: NextFunction) => {
+export const isLogged = errorWrapper(async (req: Request, res: Response, next: NextFunction) => {
     const headerToken = req.headers?.authorization
 
     if (headerToken != undefined && headerToken.startsWith('Bearer ')) {
-        // Check if token is valid
         try {
             const bearerToken = headerToken.slice(7);
             const decoded: any = jwt.verify(bearerToken, process.env.SECRET_KEY || '<FALLBACK_SECRET_KEY>');
-            // Attach decoded token to res.locals object
             res.locals.user = decoded;
             next()
         } catch (error) {
-            res.status(401).json({
-                error: 'Invalid Token'
-            })
+            next(InvalidTokenError)
         }
     } else {
-        res.status(401).json({
-            error: 'Invalid Token'
-        })
+        next(InvalidTokenError)
     }
-}
+})
 
-export const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const isAdmin = errorWrapper(async (req: Request, res: Response, next: NextFunction) => {
     // Check if user is admin using decoded token from res.locals object
-    const user: any = await User.findOne({ where: { id: res.locals.user.id} });
+    const user: any = await User.findOne({ where: { id: res.locals.user.id } });
     if (user?.isAdmin) {
         next()
     } else {
-        res.status(403).json({
-            error: 'You must be an admin to perform this action'
-        })
+        next(NotAdminError)
     }
-}
+})

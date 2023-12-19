@@ -4,8 +4,6 @@ import { createUser, deleteUser, listUsers, updateUser } from '../controllers/us
 
 const router = Router();
 
-router.post('/login', ()=>{}) //test
-
 router.get('/', isLogged, listUsers)
 
 router.post('/', isLogged, isAdmin, createUser)

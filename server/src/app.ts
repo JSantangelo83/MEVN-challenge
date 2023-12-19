@@ -5,6 +5,7 @@ import connectDatabase from "./db/connection"
 // Importing Routes
 import authRoutes from "./routes/auth.routes"
 import userRoutes from "./routes/user.routes"
+import errorHandler from "./controllers/error.controller"
 
 const app = express()
 
@@ -16,7 +17,6 @@ app.use(morgan("dev"))
 app.use(cors())
 app.use(urlencoded({ extended: false }))
 app.use(json())
-
 // Database connection
 connectDatabase()
 
@@ -28,5 +28,8 @@ app.get("/ping", (req, res) => {
 // Routes
 app.use("/auth", authRoutes)
 app.use("/users", userRoutes)
+
+// Error handler
+app.use(errorHandler)
 
 export default app

@@ -18,7 +18,7 @@ export async function connectDatabase() {
         await sequelize.sync()
 
         // Create an initial admin user if it doesn't exist
-        const [adminUser, created] = await User.findOrCreate({
+        await User.findOrCreate({
             where: { username: 'admin' },
             defaults: {
                 username: 'admin',

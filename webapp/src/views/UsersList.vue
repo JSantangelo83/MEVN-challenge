@@ -3,7 +3,7 @@
   <div class="usersList">
     <div class="usersList__header">
       <h1 class="usersList__header__title">Users list</h1>
-      <span class="usersList__header__btn" title="Create a new User" @click="createUser">
+      <span v-if="currentUser.isAdmin" class="usersList__header__btn" title="Create a new User" @click="createUser">
         <font-awesome-icon icon="plus" />
       </span>
     </div>

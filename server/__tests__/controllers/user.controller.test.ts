@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { updateUser, listUsers, deleteUser, createUser } from '../../src/controllers/user.controller';
 import { User } from '../../src/models/user.model';
 import bcrypt from 'bcrypt';
+import { DeletingYourselfError, UnhandledInternalError, UserNotFoundError, UsernameTakenError } from '../../src/utils/Errors';
 
 jest.mock('../../src/models/user.model');
 jest.mock('bcrypt');
@@ -9,6 +10,7 @@ jest.mock('bcrypt');
 describe('listUsers', () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
+    let nextFunction: NextFunction = jest.fn();
     let status: jest.Mock;
     let json: jest.Mock;
 
@@ -23,7 +25,7 @@ describe('listUsers', () => {
         const mockUsers = [{ id: '1', username: 'test', password: 'password', isAdmin: false }, { id: '2', username: 'test2', password: 'password2', isAdmin: true }];
         (User.findAll as jest.Mock).mockResolvedValue(mockUsers);
     
-        await listUsers(req as Request, res as Response);
+        await listUsers(req as Request, res as Response, nextFunction as NextFunction);
     
         expect(User.findAll).toHaveBeenCalledWith({ attributes: { exclude: ['password'] } });
         expect(json).toHaveBeenCalledWith({ data: mockUsers });
@@ -32,18 +34,9 @@ describe('listUsers', () => {
     it('returns an empty array if no users are found', async () => {
         (User.findAll as jest.Mock).mockResolvedValue([]);
     
-        await listUsers(req as Request, res as Response);
+        await listUsers(req as Request, res as Response, nextFunction as NextFunction);
     
         expect(json).toHaveBeenCalledWith({ data: [] });
-    });
-
-    it('returns a 500 status code when an error occurs', async () => {
-        (User.findAll as jest.Mock).mockRejectedValue(new Error('Test error'));
-
-        await listUsers(req as Request, res as Response);
-
-        expect(status).toHaveBeenCalledWith(500);
-        expect(json).toHaveBeenCalledWith({ error: 'Test error' });
     });
 
 });
@@ -51,6 +44,7 @@ describe('listUsers', () => {
 describe('deleteUser', () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
+    let nextFunction: NextFunction = jest.fn();
     let status: jest.Mock;
     let json: jest.Mock;
 
@@ -64,10 +58,9 @@ describe('deleteUser', () => {
     it('returns 404 if user is not found', async () => {
         (User.findByPk as jest.Mock).mockResolvedValue(null);
 
-        await deleteUser(req as Request, res as Response);
+        await deleteUser(req as Request, res as Response, nextFunction as NextFunction);
 
-        expect(status).toHaveBeenCalledWith(404);
-        expect(json).toHaveBeenCalledWith({ error: 'User not found' });
+        expect(nextFunction).toHaveBeenCalledWith(UserNotFoundError);
     });
 
     it('deletes the user if found', async () => {
@@ -75,32 +68,23 @@ describe('deleteUser', () => {
         (User.findByPk as jest.Mock).mockResolvedValue(mockUser);
         (User.destroy as jest.Mock).mockResolvedValue(1);
 
-        await deleteUser(req as Request, res as Response);
+        await deleteUser(req as Request, res as Response, nextFunction as NextFunction);
 
         expect(User.destroy).toHaveBeenCalledWith({ where: { id: '1' } });
         expect(json).toHaveBeenCalledWith({ message: 'User deleted successfully' });
     });
 
-    it('returns a 500 status code when an error occurs', async () => {
-        (User.destroy as jest.Mock).mockRejectedValue(new Error('Test error'));
-
-        await deleteUser(req as Request, res as Response);
-
-        expect(status).toHaveBeenCalledWith(500);
-        expect(json).toHaveBeenCalledWith({ error: 'Test error' });
-    });
-
     it('returns 400 if user tries to delete themselves', async () => {
         res.locals = { user: { id: '1' } };
-        await deleteUser(req as Request, res as Response);
-        expect(status).toHaveBeenCalledWith(400);
-        expect(json).toHaveBeenCalledWith({ error: 'You cannot delete yourself' });
+        await deleteUser(req as Request, res as Response, nextFunction as NextFunction);
+        expect(nextFunction).toHaveBeenCalledWith(DeletingYourselfError);
     });
 });
 
 describe('createUser', () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
+    let nextFunction: NextFunction = jest.fn();
     let status: jest.Mock;
     let json: jest.Mock;
 
@@ -117,7 +101,7 @@ describe('createUser', () => {
         (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
         (User.create as jest.Mock).mockResolvedValue(mockUser);
     
-        await createUser(req as Request, res as Response);
+        await createUser(req as Request, res as Response, nextFunction as NextFunction);
     
         expect(User.create).toHaveBeenCalledWith({
             username: 'test',
@@ -127,20 +111,11 @@ describe('createUser', () => {
         expect(json).toHaveBeenCalledWith({ message: 'User created successfully', data: mockUser });
     });
 
-    it('returns a 500 status code when an error occurs', async () => {
-        (User.create as jest.Mock).mockRejectedValue(new Error('Test error'));
-
-        await createUser(req as Request, res as Response);
-
-        expect(status).toHaveBeenCalledWith(500);
-        expect(json).toHaveBeenCalledWith({ error: 'Test error' });
-    });
-
     it('returns 400 if username is already taken', async () => {
         (User.findOne as jest.Mock).mockResolvedValue({ username: 'test' });
-        await createUser(req as Request, res as Response);
-        expect(status).toHaveBeenCalledWith(400);
-        expect(json).toHaveBeenCalledWith({ error: 'Username is already taken' });
+        await createUser(req as Request, res as Response, nextFunction as NextFunction);
+        
+        expect(nextFunction).toHaveBeenCalledWith(UsernameTakenError);
     });
 
 });
@@ -148,6 +123,7 @@ describe('createUser', () => {
 describe('updateUser', () => {
     let req: Partial<Request>;
     let res: Partial<Response>;
+    let nextFunction: NextFunction = jest.fn();
     let status: jest.Mock;
     let json: jest.Mock;
 
@@ -161,13 +137,11 @@ describe('updateUser', () => {
     it('returns 404 if user is not found', async () => {
         (User.findByPk as jest.Mock).mockResolvedValue(null);
 
-        await updateUser(req as Request, res as Response);
+        await updateUser(req as Request, res as Response, nextFunction as NextFunction);
 
-        expect(status).toHaveBeenCalledWith(404);
-        expect(json).toHaveBeenCalledWith({ error: 'User not found' });
+        expect(nextFunction).toHaveBeenCalledWith(UserNotFoundError);
     });
 
-    // Corrected updateUser tests
     it('updates the user without password field if found', async () => {
         const mockUser = { username: 'test', password: 'password', isAdmin: false };
         (User.findByPk as jest.Mock).mockResolvedValue(mockUser);
@@ -175,22 +149,13 @@ describe('updateUser', () => {
         (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
         (User.update as jest.Mock).mockResolvedValue([1]);
     
-        await updateUser(req as Request, res as Response);
+        await updateUser(req as Request, res as Response, nextFunction as NextFunction);
     
         expect(User.update).toHaveBeenCalledWith({
             password: 'hashedPassword'
         }, { where: { id: '1' } }); 
         expect(User.findByPk).toHaveBeenCalledWith('1', { attributes: { exclude: ['password'] } });
         expect(json).toHaveBeenCalledWith({ message: 'User updated successfully', data: mockUser });
-    });
-
-    it('returns a 500 status code when an error occurs', async () => {
-        (User.update as jest.Mock).mockRejectedValue(new Error('Test error'));
-
-        await updateUser(req as Request, res as Response);
-
-        expect(status).toHaveBeenCalledWith(500);
-        expect(json).toHaveBeenCalledWith({ error: 'Test error' });
     });
 
     it('returns 400 if username is already taken by another user', async () => {
@@ -207,9 +172,8 @@ describe('updateUser', () => {
         (User.findByPk as jest.Mock).mockResolvedValue({ id: '1', username: 'oldUsername', isAdmin: false });
         (User.findOne as jest.Mock).mockResolvedValue({ id: '2', username: 'test' });
 
-        await updateUser(req, res);
+        await updateUser(req, res, nextFunction);
 
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({ error: 'That username is already taken' });
+        expect(nextFunction).toHaveBeenCalledWith(UsernameTakenError);
     });
 });

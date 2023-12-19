@@ -8,7 +8,7 @@ export default class BaseService {
     token: string | null = localStorage.getItem("token");
     route: string;
     constructor(useAuth: boolean, route: string) {
-        this.apiUrl = "http://localhost:3000";
+        this.apiUrl = process.env.API_URL || "http://localhost:3000";
         this.useAuth = useAuth;
         this.route = route;
     }
@@ -67,7 +67,6 @@ export default class BaseService {
             }
             
             if (response.status === 401) {
-                console.log(response.status)
                 throw new UnauthorizedError((response.data as BaseResponseError).error);
             }
 
