@@ -3,7 +3,7 @@ import { DefaultError, UnhandledInternalError } from '../utils/Errors'
 
 const errorHandler = async (err: DefaultError, req: Request, res: Response, next: NextFunction) => {
     // If it's not a DefaultError instance, it's an unhandled error
-    if(!(err instanceof DefaultError)){
+    if (!(err instanceof DefaultError)) {
         err = UnhandledInternalError;
     }
 
@@ -14,8 +14,8 @@ const errorHandler = async (err: DefaultError, req: Request, res: Response, next
 
 
 // Mostly for handling errors in async functions (database errors, etc.)
-export const errorWrapper = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => {
-    return async (req: Request, res: Response, next: NextFunction) => {
+export const errorWrapper = (fn: (req: Request<any, any, any, any>, res: Response, next: NextFunction) => Promise<any>) => {
+    return async (req: Request<any, any, any, any>, res: Response, next: NextFunction) => {
         try {
             // Run controllers logic
             await fn(req, res, next);

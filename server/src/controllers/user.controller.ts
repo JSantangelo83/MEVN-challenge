@@ -13,7 +13,7 @@ export const listUsers = errorWrapper(async (req: Request, res: Response, next: 
     res.json({ data: users });
 })
 
-export const deleteUser = errorWrapper(async (req: Request, res: Response, next: NextFunction) => {
+export const deleteUser = errorWrapper(async (req: Request<FindUserData>, res: Response, next: NextFunction) => {
     const id = req.params.id;
 
     // Check if user is deleting himself
@@ -33,7 +33,7 @@ export const deleteUser = errorWrapper(async (req: Request, res: Response, next:
     res.json({ message: 'User deleted successfully' });
 })
 
-export const createUser = errorWrapper(async (req: Request, res: Response, next: NextFunction) => {
+export const createUser = errorWrapper(async (req: Request<unknown, unknown, UserPasswordData>, res: Response, next: NextFunction) => {
     const { username, password, isAdmin } = req.body;
 
     // Hash password
@@ -56,7 +56,7 @@ export const createUser = errorWrapper(async (req: Request, res: Response, next:
     res.json({ message: 'User created successfully', data: user });
 })
 
-export const updateUser = errorWrapper(async (req: Request, res: Response, next: NextFunction) => {
+export const updateUser = errorWrapper(async (req: Request<FindUserData, unknown, UserPasswordData>, res: Response, next: NextFunction) => {
     const id = req.params.id;
     const { username, password, isAdmin } = req.body;
 
@@ -93,3 +93,20 @@ export const updateUser = errorWrapper(async (req: Request, res: Response, next:
 
     res.json({ message: 'User updated successfully', data: updatedUser });
 })
+
+
+interface FindUserData {
+    id: number;
+}
+
+interface UserData {
+    id: number;
+    username: string;
+    isAdmin: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+interface UserPasswordData extends UserData {
+    password: string;
+}

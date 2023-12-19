@@ -5,7 +5,11 @@ import jwt from 'jsonwebtoken';
 import { InvalidCredentialsError, InvalidTokenError, NotAdminError } from '../utils/Errors';
 import { errorWrapper } from './error.controller';
 
-export const login = errorWrapper(async (req: Request, res: Response, next: NextFunction) => {
+interface LoginData extends Request {
+    username: string;
+    password: string;
+}
+export const login = errorWrapper(async (req: Request<unknown, unknown, LoginData>, res: Response, next: NextFunction) => {
     const { username, password } = req.body;
 
     // Search user in database
