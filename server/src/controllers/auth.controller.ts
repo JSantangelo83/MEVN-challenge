@@ -9,7 +9,7 @@ export const login = async (req: Request, res: Response) => {
     // Search user in database
     const user: any = await User
         .findOne({ where: { username: username } })
-        .catch((err: Error) => { res.status(500).json({ error: err }) });
+        .catch((err: Error) => { res.status(500).json({ error: 'Database error' }) });
 
     // If user doesn't exist
     if (!user) {

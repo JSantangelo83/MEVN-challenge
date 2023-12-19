@@ -17,7 +17,7 @@ export const deleteUser = async (req: Request, res: Response) => {
     const id = req.params.id;
 
     // Check if user is deleting himself
-    if (id == res.locals.user.id) {
+    if (id == res.locals?.user.id) {
         return res.status(400).json({ error: 'You cannot delete yourself' });
     }
 

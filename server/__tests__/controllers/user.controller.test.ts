@@ -20,24 +20,21 @@ describe('listUsers', () => {
     });
 
     it('returns all users without password', async () => {
-        const mockUsers = [
-            { id: '1', username: 'test', password: 'password', isAdmin: false },
-            { id: '2', username: 'test2', password: 'password2', isAdmin: true }
-        ];
+        const mockUsers = [{ id: '1', username: 'test', password: 'password', isAdmin: false }, { id: '2', username: 'test2', password: 'password2', isAdmin: true }];
         (User.findAll as jest.Mock).mockResolvedValue(mockUsers);
-
+    
         await listUsers(req as Request, res as Response);
-
+    
         expect(User.findAll).toHaveBeenCalledWith({ attributes: { exclude: ['password'] } });
-        expect(json).toHaveBeenCalledWith(mockUsers);
+        expect(json).toHaveBeenCalledWith({ data: mockUsers });
     });
-
+    
     it('returns an empty array if no users are found', async () => {
         (User.findAll as jest.Mock).mockResolvedValue([]);
-
+    
         await listUsers(req as Request, res as Response);
-
-        expect(json).toHaveBeenCalledWith([]);
+    
+        expect(json).toHaveBeenCalledWith({ data: [] });
     });
 
     it('returns a 500 status code when an error occurs', async () => {
@@ -92,6 +89,13 @@ describe('deleteUser', () => {
         expect(status).toHaveBeenCalledWith(500);
         expect(json).toHaveBeenCalledWith({ error: 'Test error' });
     });
+
+    it('returns 400 if user tries to delete themselves', async () => {
+        res.locals = { user: { id: '1' } };
+        await deleteUser(req as Request, res as Response);
+        expect(status).toHaveBeenCalledWith(400);
+        expect(json).toHaveBeenCalledWith({ error: 'You cannot delete yourself' });
+    });
 });
 
 describe('createUser', () => {
@@ -112,15 +116,15 @@ describe('createUser', () => {
         (bcrypt.genSalt as jest.Mock).mockResolvedValue('salt');
         (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
         (User.create as jest.Mock).mockResolvedValue(mockUser);
-
+    
         await createUser(req as Request, res as Response);
-
+    
         expect(User.create).toHaveBeenCalledWith({
             username: 'test',
             password: 'hashedPassword',
             isAdmin: false
         });
-        expect(json).toHaveBeenCalledWith({ message: 'User created successfully', user: mockUser });
+        expect(json).toHaveBeenCalledWith({ message: 'User created successfully', data: mockUser });
     });
 
     it('returns a 500 status code when an error occurs', async () => {
@@ -132,6 +136,13 @@ describe('createUser', () => {
         expect(json).toHaveBeenCalledWith({ error: 'Test error' });
     });
 
+    it('returns 400 if username is already taken', async () => {
+        (User.findOne as jest.Mock).mockResolvedValue({ username: 'test' });
+        await createUser(req as Request, res as Response);
+        expect(status).toHaveBeenCalledWith(400);
+        expect(json).toHaveBeenCalledWith({ error: 'Username is already taken' });
+    });
+
 });
 
 describe('updateUser', () => {
@@ -139,39 +150,38 @@ describe('updateUser', () => {
     let res: Partial<Response>;
     let status: jest.Mock;
     let json: jest.Mock;
-  
+
     beforeEach(() => {
-      status = jest.fn().mockReturnThis();
-      json = jest.fn().mockReturnThis();
-      req = { params: { id: '1' }, body: { username: 'test', password: 'password', isAdmin: false } };
-      res = { status, json };
+        status = jest.fn().mockReturnThis();
+        json = jest.fn().mockReturnThis();
+        req = { params: { id: '1' }, body: { username: 'test', password: 'password', isAdmin: false } };
+        res = { status, json };
     });
-  
+
     it('returns 404 if user is not found', async () => {
-      (User.findByPk as jest.Mock).mockResolvedValue(null);
-  
-      await updateUser(req as Request, res as Response);
-  
-      expect(status).toHaveBeenCalledWith(404);
-      expect(json).toHaveBeenCalledWith({ error: 'User not found' });
+        (User.findByPk as jest.Mock).mockResolvedValue(null);
+
+        await updateUser(req as Request, res as Response);
+
+        expect(status).toHaveBeenCalledWith(404);
+        expect(json).toHaveBeenCalledWith({ error: 'User not found' });
     });
-  
+
+    // Corrected updateUser tests
     it('updates the user without password field if found', async () => {
-      const mockUser = { username: 'test', password: 'password', isAdmin: false };
-      (User.findByPk as jest.Mock).mockResolvedValue(mockUser);
-      (bcrypt.genSalt as jest.Mock).mockResolvedValue('salt');
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
-      (User.update as jest.Mock).mockResolvedValue([1]);
-  
-      await updateUser(req as Request, res as Response);
-  
-      expect(User.update).toHaveBeenCalledWith({
-        username: 'test',
-        password: 'hashedPassword',
-        isAdmin: false
-      }, { where: { id: '1' } }); 
-      expect(User.findByPk).toHaveBeenCalledWith('1', { attributes: { exclude: ['password'] } });
-      expect(json).toHaveBeenCalledWith({ message: 'User updated successfully', user: mockUser });
+        const mockUser = { username: 'test', password: 'password', isAdmin: false };
+        (User.findByPk as jest.Mock).mockResolvedValue(mockUser);
+        (bcrypt.genSalt as jest.Mock).mockResolvedValue('salt');
+        (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+        (User.update as jest.Mock).mockResolvedValue([1]);
+    
+        await updateUser(req as Request, res as Response);
+    
+        expect(User.update).toHaveBeenCalledWith({
+            password: 'hashedPassword'
+        }, { where: { id: '1' } }); 
+        expect(User.findByPk).toHaveBeenCalledWith('1', { attributes: { exclude: ['password'] } });
+        expect(json).toHaveBeenCalledWith({ message: 'User updated successfully', data: mockUser });
     });
 
     it('returns a 500 status code when an error occurs', async () => {
@@ -182,5 +192,24 @@ describe('updateUser', () => {
         expect(status).toHaveBeenCalledWith(500);
         expect(json).toHaveBeenCalledWith({ error: 'Test error' });
     });
-  });
-  
+
+    it('returns 400 if username is already taken by another user', async () => {
+        const req = {
+            params: { id: '1' },
+            body: { username: 'test', password: 'password', isAdmin: false }
+        } as unknown as Request;
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        } as unknown as Response;
+
+        (User.findByPk as jest.Mock).mockResolvedValue({ id: '1', username: 'oldUsername', isAdmin: false });
+        (User.findOne as jest.Mock).mockResolvedValue({ id: '2', username: 'test' });
+
+        await updateUser(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({ error: 'That username is already taken' });
+    });
+});

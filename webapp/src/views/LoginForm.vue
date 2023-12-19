@@ -1,6 +1,6 @@
 <template>
   <form class="loginForm" @submit.prevent="login">
-    <img class="loginForm__logo" src="../assets/js-icon.png">
+    <img class="loginForm__logo" src="../assets/js-icon.png" />
     <input class="loginForm__input" type="username" v-model="username" placeholder="Username" />
     <input class="loginForm__input" type="password" v-model="password" placeholder="Password" />
     <button type="submit" class="loginForm__btn">Login</button>
@@ -13,9 +13,14 @@ import { defineComponent } from "vue";
 
 const loginService = new LoginService();
 
+interface ComponentData {
+  username: string;
+  password: string;
+}
+
 export default defineComponent({
   name: "LoginForm",
-  data() {
+  data(): ComponentData {
     return {
       username: "",
       password: "",
@@ -36,7 +41,7 @@ export default defineComponent({
     },
   },
 });
-</script>u
+</script>
 
 <style scoped>
 .loginForm {
@@ -52,7 +57,7 @@ export default defineComponent({
   width: 100px;
   height: 100px;
   border-radius: 30%;
-  margin-bottom:4em;
+  margin-bottom: 4em;
 }
 
 .loginForm__input {
@@ -61,7 +66,6 @@ export default defineComponent({
   border: 1px solid #ccc;
   border-radius: 5px;
   width: 300px;
-  background-color:white;
+  background-color: white;
 }
-
 </style>
