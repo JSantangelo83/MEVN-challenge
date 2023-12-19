@@ -47,6 +47,10 @@ window.onunhandledrejection = (event: PromiseRejectionEvent) => {
     handleErrors(event.reason);
 };
 
+app.config.errorHandler = (err: unknown) => {
+    handleErrors(err);
+}
+
 function handleErrors(err: unknown) {
     if (err instanceof DefaultError) {
         swalError(err.title, err.error);
