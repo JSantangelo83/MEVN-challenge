@@ -11,13 +11,14 @@ git clone git@github.com:JSantangelo83/MEVN-Challenge.git
 ```bash
 git clone https://github.com/JSantangelo83/MEVN-Challenge.git
 ```
-
 ## Docker installation
 
 ```bash
 cd MEVN-Challenge/
-docker-compose up
+docker-compose up --build -d
+curl http://localhost:8080/ # Should response with "MEVN Challenge"
 ```
+After that it should be a running website on `http://localhost:8080`
 
 ## Manual installation
 
@@ -46,7 +47,7 @@ GRANT ALL PRIVILEGES ON `mevn_challenge`.* TO 'root'@'localhost';
 #### Install dependencies
 
 ```bash
-cd MEVN-Challenge/
+cd MEVN-Challenge/server
 npm install
 ```
 
@@ -61,6 +62,17 @@ npm run test
 ```bash
 npm run dev
 ```
+### Webapp's setup
+#### Install dependencies
+```bash
+cd MEVN-Challenge/webapp
+npm install
+```
+#### Run webapp
+```bash
+npm run dev
+```
+After that it should be a running website on `http://localhost:5173`
 
 ### Initial credentials
 
